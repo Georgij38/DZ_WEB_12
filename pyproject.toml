@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "dz-web-11"
+version = "0.1.0"
+description = ""
+authors = ["Georgij38 <georgijzaharov85@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.110.1"
+uvicorn = "^0.29.0"
+sqlalchemy = "^2.0.29"
+psycopg2 = "^2.9.9"
+alembic = "^1.13.1"
+asyncpg = "^0.29.0"
+pydantic = {extras = ["email"], version = "^2.7.0"}
+faker = "^24.9.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
