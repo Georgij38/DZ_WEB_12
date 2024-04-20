@@ -3,10 +3,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from src.database.db import get_db
 
-from src.routes import contact_routes
+from src.routes import contact_routes, auth
 
 app = FastAPI()
 
+app.include_router(auth.router, prefix="/api")
 app.include_router(contact_routes.router, prefix="/api")
 
 
