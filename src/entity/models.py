@@ -1,5 +1,5 @@
 from datetime import date
-from sqlalchemy import Column, Date, String, Integer, ForeignKey, DateTime, func, Enum
+from sqlalchemy import Column, Date, String, Integer, ForeignKey, DateTime, func, Enum, Boolean
 import enum
 
 from sqlalchemy.orm import Mapped, relationship, mapped_column
@@ -43,3 +43,5 @@ class User(Base):
     created_at: Mapped[date] = mapped_column('created_at', DateTime, default=func.now())
     updated_at: Mapped[date] = mapped_column('updated_at', DateTime, default=func.now(), onupdate=func.now())
     role: Mapped[Enum] = mapped_column('role', Enum(Role), default=Role.user, nullable=False)
+    confirmed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
+    avatar: Mapped[str] = mapped_column(String(255), nullable=True)

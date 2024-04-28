@@ -8,11 +8,13 @@ from src.schemas.contact_schema import ContactsResponse, ContactCreate, ContactU
 from src.entity.models import User, Role
 from src.services.auth import auth_service
 from src.services.roles import RoleAccess
+from fastapi_limiter.depends import RateLimiter
 
 router = APIRouter(prefix='/contacts', tags=['contacts'])
 access_to_route_all = RoleAccess([Role.admin, Role.moderator])
 
-@router.get("/search/{query}", response_model=List[ContactsResponse])
+
+@router.get("/search/{query}", response_model=List[ContactsResponse], dependencies=[Depends(RateLimiter(times=1, seconds=20))])
 async def get_contact_query(query: str, db: AsyncSession = Depends(get_db),
                             user: User = Depends(auth_service.get_current_user)):
     contact = await repositories_contact.get_contact_query(query, db, user)
@@ -22,7 +24,7 @@ async def get_contact_query(query: str, db: AsyncSession = Depends(get_db),
 
 
 # Функція для отримання контактів з днями народження на найближчі 7 днів
-@router.get("/birthdays", response_model=List[ContactsResponse])
+@router.get("/birthdays", response_model=List[ContactsResponse], dependencies=[Depends(RateLimiter(times=1, seconds=20))])
 async def get_birthdays_next_week(days: int = Query(7), db: AsyncSession = Depends(get_db),
                                   user: User = Depends(auth_service.get_current_user)):
     contact = await repositories_contact.get_birthdays_next_week(days, db, user)
@@ -31,7 +33,7 @@ async def get_birthdays_next_week(days: int = Query(7), db: AsyncSession = Depen
     return contact
 
 
-@router.get("/", response_model=List[ContactsResponse])
+@router.get("/", response_model=List[ContactsResponse], dependencies=[Depends(RateLimiter(times=1, seconds=20))])
 async def get_contacts(limit: int = Query(10, ge=10, le=500), offset: int = Query(0, ge=0),
                            db: AsyncSession = Depends(get_db),
                            user: User = Depends(auth_service.get_current_user)):
@@ -39,7 +41,8 @@ async def get_contacts(limit: int = Query(10, ge=10, le=500), offset: int = Quer
     return contacts
 
 
-@router.get("/all", response_model=List[ContactsResponse], dependencies=[Depends(access_to_route_all)])
+@router.get("/all", response_model=List[ContactsResponse],
+            dependencies=[Depends(access_to_route_all), Depends(RateLimiter(times=1, seconds=20))])
 async def get_all_contacts(limit: int = Query(10, ge=10, le=500),
                            offset: int = Query(0, ge=0),
                            db: AsyncSession = Depends(get_db)):
@@ -47,7 +50,7 @@ async def get_all_contacts(limit: int = Query(10, ge=10, le=500),
     return contacts
 
 
-@router.get("/{contact_id}", response_model=ContactsResponse)
+@router.get("/{contact_id}", response_model=ContactsResponse, dependencies=[Depends(RateLimiter(times=1, seconds=20))])
 async def get_contact(contact_id: int = Path(ge=1), db: AsyncSession = Depends(get_db),
                       user: User = Depends(auth_service.get_current_user)):
     contact = await repositories_contact.get_contact(contact_id, db, user)
@@ -56,14 +59,15 @@ async def get_contact(contact_id: int = Path(ge=1), db: AsyncSession = Depends(g
     return contact
 
 
-@router.post("/", response_model=ContactsResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=ContactsResponse, status_code=status.HTTP_201_CREATED,
+             dependencies=[Depends(RateLimiter(times=1, seconds=20))])
 async def create_contact(body: ContactCreate, db: AsyncSession = Depends(get_db),
                          user: User = Depends(auth_service.get_current_user)):
     contact = await repositories_contact.create_contact(body, db, user)
     return contact
 
 
-@router.put("/{contact_id}", response_model=ContactsResponse)
+@router.put("/{contact_id}", response_model=ContactsResponse, dependencies=[Depends(RateLimiter(times=1, seconds=20))])
 async def update_contact(body: ContactUpdate, contact_id: int = Path(ge=1), db: AsyncSession = Depends(get_db),
                          user: User = Depends(auth_service.get_current_user)):
     contact = await repositories_contact.update_contact(contact_id, body, db, user)

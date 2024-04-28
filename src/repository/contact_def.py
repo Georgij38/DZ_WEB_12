@@ -1,5 +1,5 @@
 
-from sqlalchemy import select, delete, func, exists
+from sqlalchemy import select, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timedelta
 
@@ -47,6 +47,7 @@ async def get_all_contacts(limit: int, offset: int, db: AsyncSession):
 async def get_contact(contact_id: int, db: AsyncSession, user: User):
     result = await db.execute(select(Contact).filter_by(user=user).where(Contact.id == contact_id))
     return result.scalar_one_or_none()
+
 
 async def get_contact_query(query: str, db: AsyncSession, user: User):
 
