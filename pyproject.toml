@@ -21,7 +21,11 @@ fastapi-mail = "^1.4.1"
 python-dotenv = "^1.0.1"
 fastapi-limiter = "^0.1.6"
 cloudinary = "^1.40.0"
+sphinx = "^7.3.7"
 
+
+[tool.poetry.group.dev.dependencies]
+sphinx = "^7.3.7"
 
 [build-system]
 requires = ["poetry-core"]
