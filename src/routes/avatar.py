@@ -32,6 +32,22 @@ async def get_current_user(
     user: User = Depends(auth_service.get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    """
+        Update the avatar of the current user.
+
+        This function handles the upload of a new avatar image for the user, updates the avatar URL in the database,
+        and updates the user's information in the cache. The avatar is resized to 250x250 pixels and cropped to fill the
+        given dimensions.
+
+        Args:
+            file (UploadFile, optional): The file to be uploaded as the new avatar. Defaults to File().
+            user (User): The user who is currently logged in. This is obtained from the auth_service.get_current_user
+                         dependency.
+            db (AsyncSession): The database session. This is obtained from the get_db dependency.
+
+        Returns:
+            UserResponse: The updated user information.
+    """
     public_id = f"Avatar/{user.email}"
     res = cloudinary.uploader.upload(file.file, public_id=public_id, owerite=True)
     print(res)

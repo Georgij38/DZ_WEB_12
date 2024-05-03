@@ -23,6 +23,24 @@ conf = ConnectionConfig(
 
 
 async def send_email(email: EmailStr, username: str, host: str):
+    """
+    Send an email with a verification link to the specified email address.
+
+    This function creates an email verification token using the `auth_service`, constructs an email message
+    with a confirmation link using the FastMail configuration, and sends the email.
+
+    Args:
+        email (EmailStr): The recipient's email address.
+        username (str): The recipient's username.
+        host (str): The host URL for the verification link.
+
+    Raises:
+        ConnectionErrors: If there are errors connecting to the email server.
+
+    Note:
+        The email template used is 'verify_email.html' and it should be located in the 'templates' directory
+        relative to the script where this function is defined.
+    """
     try:
         token_verification = auth_service.create_email_token({"sub": email})
         message = MessageSchema(

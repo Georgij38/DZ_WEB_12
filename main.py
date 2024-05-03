@@ -6,7 +6,7 @@ from starlette.middleware.cors import CORSMiddleware
 import redis.asyncio as redis
 from src.database.db import get_db
 from src.conf.config import config
-from src.routes import contact_routes, auth, limiter, avatar
+from src.routes import contact_routes, auth, avatar
 
 app = FastAPI()
 
@@ -23,7 +23,6 @@ app.add_middleware(
 
 app.include_router(auth.router, prefix="/api")
 app.include_router(contact_routes.router, prefix="/api")
-app.include_router(limiter.router, prefix="/api")
 app.include_router(avatar.router, prefix="/api")
 
 

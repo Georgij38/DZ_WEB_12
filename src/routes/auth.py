@@ -14,6 +14,25 @@ get_refresh_token = HTTPBearer()
 
 @router.post("/signup", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def signup(body: UserSchema, bt: BackgroundTasks, request: Request, db: AsyncSession = Depends(get_db)):
+    """
+        Handle user signup.
+
+        This endpoint allows users to create a new account. It checks if the user already exists,
+        hashes the password, creates the user, and sends a confirmation email in the background.
+
+        Args:
+            body (UserSchema): The user data to be registered.
+            bt (BackgroundTasks): The background tasks manager.
+            request (Request): The HTTP request object.
+            db (AsyncSession): The database session.
+
+        Raises:
+            HTTPException: If the user already exists, with a 409 status code and a message indicating
+                           that the account already exists.
+
+        Returns:
+            UserResponse: The newly created user.
+        """
     exist_user = await repositories_users.get_user_by_email(body.email, db)
     if exist_user:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Account already exists")
@@ -23,8 +42,25 @@ async def signup(body: UserSchema, bt: BackgroundTasks, request: Request, db: As
     return new_user
 
 
-@router.post("/login",  response_model=TokenSchema)
+@router.post("/login", response_model=TokenSchema)
 async def login(body: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
+    """
+        Handle user login.
+
+        This endpoint allows users to log in using their email and password. It verifies the credentials,
+        generates access and refresh tokens, and updates the user's refresh token in the database.
+
+        Args:
+            body (OAuth2PasswordRequestForm): The login credentials.
+            db (AsyncSession): The database session.
+
+        Raises:
+            HTTPException: If the email is invalid, the email is not confirmed, or the password is invalid,
+                           with appropriate status codes and error messages.
+
+        Returns:
+            dict: A dictionary containing the access token, refresh token, and token type.
+        """
     user = await repositories_users.get_user_by_email(body.username, db)
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email")
@@ -39,9 +75,27 @@ async def login(body: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = 
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
 
-@router.get('/refresh_token',  response_model=TokenSchema)
+@router.get('/refresh_token', response_model=TokenSchema)
 async def refresh_token(credentials: HTTPAuthorizationCredentials = Depends(get_refresh_token),
                         db: AsyncSession = Depends(get_db)):
+    """
+       Refresh the access token.
+
+       This endpoint allows users to refresh their access token using their refresh token. It verifies
+       the refresh token, generates new access and refresh tokens, and updates the user's refresh token
+       in the database.
+
+       Args:
+           credentials (HTTPAuthorizationCredentials): The credentials containing the refresh token.
+           db (AsyncSession): The database session.
+
+       Raises:
+           HTTPException: If the refresh token is invalid, with a 401 status code and a message indicating
+                          that the refresh token is invalid.
+
+       Returns:
+           dict: A dictionary containing the new access token, refresh token, and token type.
+       """
     token = credentials.credentials
     email = await auth_service.decode_refresh_token(token)
     user = await repositories_users.get_user_by_email(email, db)
@@ -57,6 +111,24 @@ async def refresh_token(credentials: HTTPAuthorizationCredentials = Depends(get_
 
 @router.get('/confirmed_email/{token}')
 async def confirmed_email(token: str, db: AsyncSession = Depends(get_db)):
+    """
+        Confirm a user's email.
+
+        This endpoint allows users to confirm their email address by providing a token. It verifies the
+        token, checks if the user exists, and if the email is not already confirmed, it confirms the email.
+
+        Args:
+            token (str): The confirmation token.
+            db (AsyncSession): The database session.
+
+        Raises:
+            HTTPException: If the verification fails, with a 400 status code and a message indicating
+                           that there was a verification error.
+
+        Returns:
+            dict: A dictionary containing a message indicating whether the email is already confirmed
+                  or if the confirmation was successful.
+        """
     email = await auth_service.get_email_from_token(token)
     user = await repositories_users.get_user_by_email(email, db)
     if user is None:
@@ -70,6 +142,22 @@ async def confirmed_email(token: str, db: AsyncSession = Depends(get_db)):
 @router.post('/request_email')
 async def request_email(body: RequestEmail, background_tasks: BackgroundTasks, request: Request,
                         db: AsyncSession = Depends(get_db)):
+    """
+        Request email confirmation.
+
+        This endpoint allows users to request an email confirmation. It checks if the user's email is
+        already confirmed and if not, it adds a task to send a confirmation email to the background tasks.
+
+        Args:
+            body (RequestEmail): The request body containing the user's email.
+            background_tasks (BackgroundTasks): The background tasks manager.
+            request (Request): The HTTP request object.
+            db (AsyncSession): The database session.
+
+        Returns:
+            dict: A dictionary containing a message indicating whether the email is already confirmed
+                  or to check the email for confirmation.
+        """
     user = await repositories_users.get_user_by_email(body.email, db)
 
     if user.confirmed:
@@ -77,5 +165,3 @@ async def request_email(body: RequestEmail, background_tasks: BackgroundTasks, r
     if user:
         background_tasks.add_task(send_email, user.email, user.username, str(request.base_url))
     return {"message": "Check your email for confirmation."}
-
-
