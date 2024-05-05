@@ -7,7 +7,7 @@ from src.repository import users as repositories_users
 from src.schemas.user import UserSchema, TokenSchema, UserResponse, RequestEmail
 from src.services.auth import auth_service
 from src.services.email import send_email
-
+from src.conf import messages
 router = APIRouter(prefix='/auth', tags=['auth'])
 get_refresh_token = HTTPBearer()
 
@@ -15,27 +15,21 @@ get_refresh_token = HTTPBearer()
 @router.post("/signup", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def signup(body: UserSchema, bt: BackgroundTasks, request: Request, db: AsyncSession = Depends(get_db)):
     """
-        Handle user signup.
+    The signup function creates a new user in the database.
+        It takes in a UserSchema object, which is validated by pydantic.
+        If the email already exists, it raises an HTTPException with status code 409 (Conflict).
+        Otherwise, it hashes the password and creates a new user using create_user from repositories/users.py.
 
-        This endpoint allows users to create a new account. It checks if the user already exists,
-        hashes the password, creates the user, and sends a confirmation email in the background.
-
-        Args:
-            body (UserSchema): The user data to be registered.
-            bt (BackgroundTasks): The background tasks manager.
-            request (Request): The HTTP request object.
-            db (AsyncSession): The database session.
-
-        Raises:
-            HTTPException: If the user already exists, with a 409 status code and a message indicating
-                           that the account already exists.
-
-        Returns:
-            UserResponse: The newly created user.
-        """
+    :param body: UserSchema: Validate the request body
+    :param bt: BackgroundTasks: Add a task to the background tasks queue
+    :param request: Request: Get the base url of the application
+    :param db: AsyncSession: Get the database session
+    :return: A user object
+    :doc-author: Trelent
+    """
     exist_user = await repositories_users.get_user_by_email(body.email, db)
     if exist_user:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Account already exists")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=messages.ACCOUNT_EXIST)
     body.password = auth_service.get_password_hash(body.password)
     new_user = await repositories_users.create_user(body, db)
     bt.add_task(send_email, new_user.email, new_user.username, str(request.base_url))

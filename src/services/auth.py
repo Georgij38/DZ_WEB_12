@@ -103,7 +103,6 @@ class Auth:
         encoded_access_token = jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
         return encoded_access_token
 
-
     async def create_refresh_token(self, data: dict, expires_delta: Optional[float] = None):
         """
         Create a new refresh token.
